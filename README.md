@@ -1,98 +1,58 @@
-# advanced-medication-system
+ This project is a smart healthcare prototype that combines autonomous navigation, real-time health validation, and intelligent medicine dispensing using IoT and robotics. The system uses an Arduino Uno-powered robo car and an ESP32-based module, integrated with Firebase and ThingSpeak for cloud-based control, monitoring, and alerts.
 
+🔧 Features (Implemented)
+Autonomous Obstacle Avoidance
+Uses an ultrasonic sensor mounted on a servo motor to detect obstacles and scan for a clear path before moving.
 
+Scheduled Pill Dispensing
+The ESP32 reads the dose count and time from the Firebase Realtime Database and activates one of four servo-controlled compartments (morning, afternoon, evening, night) to dispense a pill at the scheduled time.
 
-```markdown
-# 🚗💊 Smart Medicine Dispenser Robo Car
+Pulse Check Before Dispensing
+A MAX30102 pulse sensor reads the user’s pulse to confirm presence and basic wellness before activating the dispenser.
 
-A smart healthcare and robotics prototype that combines autonomous movement, pulse validation, real-time cloud monitoring, and scheduled medicine dispensing. Built using Arduino Uno, ESP32, Firebase, and ThingSpeak, this system ensures timely and safe delivery of medication with cloud-based updates and notifications.
+Email Notification & Cloud Logging
+After a successful dispense, the system sends an email to the registered person and logs the event to a custom dashboard via Firebase and ThingSpeak, enabling real-time remote monitoring.
 
----
+Dashboard Integration (Completed)
+A web-based dashboard shows live dispensing updates, patient data, and historical logs using Firebase and ThingSpeak cloud services.
 
-## 🔧 Features (Implemented)
+Modular Integration
 
-### 🤖 Autonomous Obstacle Avoidance  
-- Robo car uses an **ultrasonic sensor** mounted on a **servo motor** to detect obstacles.
-- It scans left and right to find a clear path and move accordingly.
+Arduino Uno: Controls motors, steering logic, and ultrasonic obstacle avoidance.
 
-### ⏰ Scheduled Pill Dispensing  
-- ESP32 retrieves **scheduled time and dose count** from **Firebase Realtime Database**.
-- Based on time, one of the **four servo-controlled compartments** (morning, afternoon, evening, night) dispenses the pill.
+ESP32: Handles time sync (via NTPClient), cloud interaction, pulse monitoring, and servo-based pill dispensing.
 
-### ❤️ Pulse Check Before Dispensing  
-- **MAX30102 pulse sensor** checks the user's pulse.
-- Dispensing occurs only if pulse is detected, ensuring basic health validation.
+🧪 Work in Progress / Planned
+Facial Recognition (ESP32-CAM)
+Identify and verify the correct patient before pill dispensing.
 
-### 📧 Email Notification & Cloud Logging  
-- Sends an **email alert** to the registered patient after each successful pill dispense.
-- Logs the event on a **custom dashboard** using **Firebase** and **ThingSpeak**, viewable in real-time.
+Pill Dispense Confirmation with Load Sensor
+Detects if the pill has physically been dispensed using a load cell sensor.
 
-### 📊 Dashboard Integration (Completed)  
-- A **web dashboard** displays real-time logs of pill dispensing and patient data.
-- Built using Firebase and ThingSpeak for easy access and monitoring by caregivers.
+Liquid Medicine Dispenser Add-on
+Add functionality for dispensing liquid medications alongside pills.
 
-### 🔄 Modular Microcontroller Integration  
-- **Arduino Uno**: Controls DC motors, ultrasonic sensor, and obstacle avoidance.
-- **ESP32**: Handles Firebase sync, real-time clock, pulse monitoring, email notifications, and servo control.
+📦 Hardware Used
+Arduino Uno
 
----
+ESP32 & ESP32-CAM (for future facial detection)
 
-## 🧪 Work in Progress / Planned Features
+MAX30102 Pulse Sensor
 
-- **🧠 Facial Recognition (ESP32-CAM)**  
-  Detect and verify the correct patient before dispensing using face detection.
+Ultrasonic Sensor
 
-- **⚖️ Load Sensor Integration**  
-  Use a load cell to confirm whether the pill has actually been dispensed.
+SG90 Servo Motors (×5)
 
-- **💧 Liquid Medicine Dispenser**  
-  Add-on to support dispensing of liquid medicines alongside pills.
+L298S Motor Driver
 
----
+DC Motors (×4)
 
-## 📦 Hardware Used
+Firebase Realtime Database
 
-- Arduino Uno  
-- ESP32  
-- ESP32-CAM *(planned)*  
-- MAX30102 Pulse Sensor  
-- Ultrasonic Sensor + SG90 Servo Motor  
-- SG90 Servo Motors   
-- L298S Motor Driver  
-- DC Motors (×4)  
-- Firebase Realtime Database  
-- ThingSpeak IoT Cloud  
-- NTPClient (for IST time synchronization)  
-- Load Sensor *(planned)*  
-- Buzzer, LEDs, Chassis, Wires, Battery Pack
+ThingSpeak IoT Cloud
 
----
+NTPClient (IST time sync)
 
-## 🌐 Cloud Integration
+Load Sensor (planned)
 
-- **Firebase Realtime Database** for storing schedule, dispensing logs, and email IDs.
-- **ThingSpeak** for IoT data visualization and dashboard metrics.
-- **NTPClient** for accurate real-time scheduling in IST.
-
----
-
-## 📸 Project Status
-
-✅ Pill compartments  
-✅ Time-based dispensing  
-✅ Pulse sensor validation  
-✅ Firebase & ThingSpeak dashboard  
-✅ Email alerts  
-🔜 Facial recognition  
-🔜 Load sensor confirmation  
-🔜 Liquid dispenser
-
----
-
-## 💡 Author
-
-Smart Healthcare Project by my team mates Bhoomika DH , Madhumitha P, Pruthvi S and Vaishnavi R Katti  
-Inspired by real-world IoT healthcare applications  
-*For academic and prototyping use only.*
-
----
+Buzzer, LEDs, jumper wires, chassis, battery pack
