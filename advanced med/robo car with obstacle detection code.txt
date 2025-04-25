@@ -1,0 +1,175 @@
+#include <Servo.h>
+
+// Motor control pins (adjust as per your setup)
+#define ENA 5
+#define IN1 6
+#define IN2 7
+#define IN3 8
+#define IN4 9
+#define ENB 10
+
+// Ultrasonic pins
+const int trigPin = 2;
+const int echoPin = 3;
+
+// Servo pin
+const int servoPin = 12;
+Servo myServo;
+
+long duration;
+int distance;
+const int threshold = 20;  // Obstacle detection threshold in cm
+
+// Function to get distance
+int getDistance() {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  return duration * 0.034 / 2;
+}
+
+// Movement functions
+void moveForward() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  Serial.println("Moving forward");
+}
+
+void stopMotors() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+  Serial.println("Motors stopped");
+}
+
+void turnLeft() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  Serial.println("Turning left");
+  delay(500);
+  stopMotors();
+}
+
+void turnRight() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  Serial.println("Turning right");
+  delay(500);
+  stopMotors();
+}
+
+void moveBackward() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  Serial.println("Reversing");
+  delay(600);
+  stopMotors();
+}
+
+void setup() {
+  Serial.begin(9600);
+
+  // Motor pins
+  pinMode(ENA, OUTPUT);
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(ENB, OUTPUT);
+  analogWrite(ENA, 255);
+  analogWrite(ENB, 255);
+
+  // Ultrasonic sensor pins
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  // Servo setup
+  myServo.attach(servoPin);
+  myServo.write(90); // face forward
+  delay(500);
+
+  Serial.println("Setup complete");
+}
+
+void loop() {
+  distance = getDistance();
+  Serial.print("Front Distance: ");
+  Serial.println(distance);
+
+  if (distance > threshold) {
+    moveForward();
+  } else {
+    stopMotors();
+    Serial.println("Obstacle detected, scanning...");
+
+    int leftDist, rightDist;
+
+    // Look left
+    myServo.write(150);
+    delay(500);
+    leftDist = getDistance();
+    Serial.print("Left Distance: ");
+    Serial.println(leftDist);
+
+    // Look right
+    myServo.write(30);
+    delay(500);
+    rightDist = getDistance();
+    Serial.print("Right Distance: ");
+    Serial.println(rightDist);
+
+    // Return to center
+    myServo.write(90);
+    delay(300);
+
+    if (leftDist > threshold || rightDist > threshold) {
+      // Decide direction
+      if (leftDist > rightDist) {
+        turnLeft();
+      } else {
+        turnRight();
+      }
+    } else {
+      // All directions blocked — reverse and recheck
+      Serial.println("All paths blocked! Reversing...");
+      moveBackward();
+
+      // Recheck after reversing
+      myServo.write(150);
+      delay(500);
+      leftDist = getDistance();
+
+      myServo.write(30);
+      delay(500);
+      rightDist = getDistance();
+
+      myServo.write(90);
+      delay(300);
+
+      if (leftDist > threshold || rightDist > threshold) {
+        if (leftDist > rightDist) {
+          turnLeft();
+        } else {
+          turnRight();
+        }
+      } else {
+        Serial.println("Still no clear path. Waiting...");
+        delay(500);
+      }
+    }
+  }
+
+  delay(100);
+}

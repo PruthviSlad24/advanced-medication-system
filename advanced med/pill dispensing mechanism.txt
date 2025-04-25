@@ -1,0 +1,141 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <Wire.h>
+#include "MAX30105.h"
+#include "spo2_algorithm.h"
+#include <ESP32Servo.h>  // Include the Servo library
+
+// MAX30102 sensor object
+MAX30105 particleSensor;
+
+// Sensor buffers
+uint32_t irBuffer[100];
+uint32_t redBuffer[100];
+int32_t bufferLength = 100;
+int32_t spo2;
+int8_t validSPO2;
+int32_t heartRate;
+int8_t validHeartRate;
+
+// WiFi credentials
+const char* ssid = "";
+const char* password = "";
+
+// ThingSpeak credentials
+const char* thingSpeakApiKey = "95139YL7OH85LDPC";
+const char* server = "http://api.thingspeak.com/update";
+
+// I2C pins (optional for ESP32)
+#define SDA_PIN 21
+#define SCL_PIN 22
+
+// Servo setup
+int servoPin = 14;
+Servo myServo;
+int currentPosition = 0;  // Start position of the servo
+
+void setup() {
+  Serial.begin(115200);
+  Wire.begin(SDA_PIN, SCL_PIN);
+
+  // Connect to WiFi
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi...");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWiFi connected.");
+
+  // Initialize MAX30102
+  if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) {
+    Serial.println("MAX30102 was not found. Please check wiring/power.");
+    while (1);
+  }
+  Serial.println("MAX30102 initialized.");
+
+  // Configure MAX30102
+  particleSensor.setup(60, 4, 2, 100, 411, 4096);
+
+  // Setup servo
+  myServo.attach(servoPin);
+  myServo.write(currentPosition);  // Set the initial position of the servo
+}
+
+void loop() {
+  // Read 100 samples
+  for (byte i = 0; i < bufferLength; i++) {
+    while (!particleSensor.available())
+      particleSensor.check();
+    redBuffer[i] = particleSensor.getRed();
+    irBuffer[i] = particleSensor.getIR();
+    particleSensor.nextSample();
+  }
+
+  // Calculate SpO2 and Heart Rate
+  maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
+
+  if (irBuffer[0] < 50000) {
+    Serial.println("Place your finger on the sensor!");
+  } else {
+    if (validHeartRate) {
+      Serial.print("Heart Rate: ");
+      Serial.print(heartRate);
+      Serial.print(" bpm, ");
+    } else {
+      Serial.print("Heart Rate: --- bpm, ");
+    }
+
+    if (validSPO2) {
+      Serial.print("SpO2: ");
+      Serial.print(spo2);
+      Serial.println("%");
+    } else {
+      Serial.println("SpO2: ---");
+    }
+
+    // Move servo when a valid heart rate is detected
+    if (validHeartRate) {
+      Serial.println("Finger detected! Rotating servo...");
+
+      // Rotate the servo motor 45 degrees each time a finger is detected
+      currentPosition += 45;
+
+      // If the servo reaches 180 degrees, return to the initial position
+      if (currentPosition > 180) {
+        currentPosition = 0;
+      }
+
+      myServo.write(currentPosition);  // Rotate the servo to the new position
+      delay(2000);  // Wait for 2 seconds before checking again
+    }
+
+    // Send to ThingSpeak
+    if (WiFi.status() == WL_CONNECTED) {
+      HTTPClient http;
+
+      String url = String(server) +
+                   "?api_key=" + thingSpeakApiKey +
+                   "&field1=" + String(validHeartRate ? heartRate : 0) +
+                   "&field2=" + String(validSPO2 ? spo2 : 0);
+
+      http.begin(url);
+      int httpResponseCode = http.GET();
+
+      if (httpResponseCode > 0) {
+        Serial.print("Data sent. Response code: ");
+        Serial.println(httpResponseCode);
+      } else {
+        Serial.print("Error sending data. Code: ");
+        Serial.println(httpResponseCode);
+      } 
+
+      http.end();
+    } else {
+      Serial.println("WiFi not connected.");
+    }
+  }
+
+  delay(15000); // ThingSpeak allows 1 update every 15 seconds
+}
+
